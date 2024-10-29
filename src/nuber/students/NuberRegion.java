@@ -54,8 +54,12 @@ public class NuberRegion {
 	 */
 	public Future<BookingResult> bookPassenger(Passenger waitingPassenger)
 	{		
-		
-		
+		if(executer.isShutdown()) {
+			System.out.println("Booking was rejected!");
+			return null;
+		}
+		Booking booking= new Booking(dispatch, waitingPassenger);
+		return executer.submit(booking);
 	}
 	
 	/**
@@ -63,6 +67,7 @@ public class NuberRegion {
 	 */
 	public void shutdown()
 	{
+		executer.shutdown();
 	}
 		
 }
