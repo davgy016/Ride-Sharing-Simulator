@@ -1,5 +1,7 @@
 package nuber.students;
 
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 /**
@@ -17,6 +19,11 @@ import java.util.concurrent.Future;
  *
  */
 public class NuberRegion {
+	
+	private NuberDispatch dispatch;
+	private String regionName;
+	private final int maxSimultaneousJobs;
+	private ExecutorService executer;
 
 	
 	/**
@@ -28,8 +35,10 @@ public class NuberRegion {
 	 */
 	public NuberRegion(NuberDispatch dispatch, String regionName, int maxSimultaneousJobs)
 	{
-		
-
+		this.dispatch = dispatch;
+		this.regionName=regionName;
+		this.maxSimultaneousJobs=maxSimultaneousJobs;
+		this.executer = Executors.newFixedThreadPool(maxSimultaneousJobs);
 	}
 	
 	/**
@@ -45,6 +54,7 @@ public class NuberRegion {
 	 */
 	public Future<BookingResult> bookPassenger(Passenger waitingPassenger)
 	{		
+		
 		
 	}
 	
