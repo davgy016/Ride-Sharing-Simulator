@@ -43,12 +43,17 @@ public class Booking implements Callable<BookingResult>{
 	 */
 	public Booking (NuberDispatch dispatch, Passenger passenger)
 	{
-		this.bookingID = counterID	;
+		this.bookingID = generateBookingID();
 		this.dispatch = dispatch;
 		this.passenger=passenger;
 		this.startTime = new Date().getTime();
 	}
 	
+	private static synchronized int generateBookingID() {
+		// TODO Auto-generated method stub
+		return ++counterID;
+	}
+
 	/**
 	 * At some point, the Nuber Region responsible for the booking can start it (has free spot),
 	 * and calls the Booking.call() function, which:
