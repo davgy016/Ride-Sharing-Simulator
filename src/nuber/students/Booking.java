@@ -29,7 +29,7 @@ public class Booking implements Callable<BookingResult>{
 	private final Passenger passenger;
 	private Driver driver;
 	private long startTime;
-	private long endTime;
+	
 	private static int counterID=0;
 
 		
@@ -69,18 +69,21 @@ public class Booking implements Callable<BookingResult>{
 	 * 			information required in the BookingResult constructor.
 	 *
 	 * @return A BookingResult containing the final information about the booking 
+	 * @throws InterruptedException 
 	 */
-	public BookingResult call() {
-		try {
+	public BookingResult call() throws InterruptedException {
+		
 			driver = dispatch.getDriver();
+			while(driver==null) {
+				Thread.sleep(100);
+				driver = dispatch.getDriver();
+			}
 			driver.pickUpPassenger(passenger);
 			driver.driveToDestination();
-			endTime =new Date().getTime();
+			long endTime =new Date().getTime();
+			long travelTime = endTime - startTime;
 			dispatch.addDriver(driver);			
-		}catch (InterruptedException e){
-			e.printStackTrace();
-		}
-		return  new BookingResult(bookingID, passenger, driver, bookingID);
+			return  new BookingResult(bookingID, passenger, driver, travelTime);		
 	}
 	
 	/***
