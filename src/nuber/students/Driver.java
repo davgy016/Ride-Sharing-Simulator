@@ -2,9 +2,13 @@ package nuber.students;
 
 public class Driver extends Person {
 
+	private Passenger currentPassenger;
+	private int maxSleep;
 	
 	public Driver(String driverName, int maxSleep)
 	{
+		super(driverName, maxSleep);
+		this.maxSleep = maxSleep;
 	}
 	
 	/**
