@@ -1,5 +1,9 @@
 package nuber.students;
 
+import java.math.BigInteger;
+import java.util.Date;
+import java.util.concurrent.Callable;
+
 /**
  * 
  * Booking represents the overall "job" for a passenger getting to their destination.
@@ -18,7 +22,15 @@ package nuber.students;
  * @author james
  *
  */
-public class Booking {
+public class Booking implements Callable<BookingResult>{
+	
+	private final int bookingID;
+	private final NuberDispatch dispatch;
+	private final Passenger passenger;
+	private Driver driver;
+	private long startTime;
+	private long endTime;
+	private static int counterID=0;
 
 		
 	/**
@@ -29,8 +41,12 @@ public class Booking {
 	 * @param dispatch
 	 * @param passenger
 	 */
-	public Booking(NuberDispatch dispatch, Passenger passenger)
+	public Booking (NuberDispatch dispatch, Passenger passenger)
 	{
+		this.bookingID = counterID	;
+		this.dispatch = dispatch;
+		this.passenger=passenger;
+		this.startTime = new Date().getTime();
 	}
 	
 	/**
@@ -43,14 +59,23 @@ public class Booking {
 	 * 4.	It must then call the Driver.driveToDestination() function, with the thread pausing 
 	 * 			whilst as function is called.
 	 * 5.	Once at the destination, the time is recorded, so we know the total trip duration. 
-	 * 6.	The driver, now free, is added back into Dispatch’s list of available drivers. 
+	 * 6.	The driver, now free, is added back into Dispatchï¿½s list of available drivers. 
 	 * 7.	The call() function the returns a BookingResult object, passing in the appropriate 
 	 * 			information required in the BookingResult constructor.
 	 *
 	 * @return A BookingResult containing the final information about the booking 
 	 */
 	public BookingResult call() {
-
+		try {
+			driver = dispatch.getDriver();
+			driver.pickUpPassenger(passenger);
+			driver.driveToDestination();
+			endTime =new Date().getTime();
+			dispatch.addDriver(driver);			
+		}catch (InterruptedException e){
+			e.printStackTrace();
+		}
+		return  new BookingResult(bookingID, passenger, driver, bookingID);
 	}
 	
 	/***
@@ -66,6 +91,8 @@ public class Booking {
 	@Override
 	public String toString()
 	{
+		return bookingID + ":" + (driver != null ? driver.name : "null") +
+				":"+(passenger!=null ? passenger.name : "null");
 	}
 
 }
