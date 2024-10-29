@@ -1,7 +1,10 @@
 package nuber.students;
 
 import java.util.HashMap;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
+import java.util.*;
 
 /**
  * The core Dispatch class that instantiates and manages everything for Nuber
@@ -18,6 +21,11 @@ public class NuberDispatch {
 	
 	private boolean logEvents = false;
 	
+	private final  HashMap<String, NuberRegion> regions;
+	
+	//BlockingQueue is thread safe, it handles thread synchronization by itself 
+	private BlockingQueue<Driver> driverQueue = new ArrayBlockingQueue(MAX_DRIVERS);
+	
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
 	 * It should be able to handle a variable number of regions based on the HashMap provided.
@@ -27,6 +35,9 @@ public class NuberDispatch {
 	 */
 	public NuberDispatch(HashMap<String, Integer> regionInfo, boolean logEvents)
 	{
+		this.logEvents =logEvents;
+		this.regions= new HashMap<>();	
+		
 	}
 	
 	/**
@@ -36,9 +47,11 @@ public class NuberDispatch {
 	 * 
 	 * @param The driver to add to the queue.
 	 * @return Returns true if driver was added to the queue
+	 * @throws InterruptedException 
 	 */
-	public boolean addDriver(Driver newDriver)
+	public boolean addDriver(Driver newDriver) throws InterruptedException
 	{
+		return driverQueue.offer(newDriver);
 	}
 	
 	/**
@@ -47,9 +60,11 @@ public class NuberDispatch {
 	 * Must be able to have drivers added from multiple threads.
 	 * 
 	 * @return A driver that has been removed from the queue
+	 * @throws InterruptedException 
 	 */
-	public Driver getDriver()
+	public Driver getDriver() throws InterruptedException
 	{
+		return driverQueue.take();
 	}
 
 	/**
