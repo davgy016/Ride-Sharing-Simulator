@@ -1,14 +1,14 @@
 package nuber.students;
 
 import java.util.HashMap;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.*;
 
 /**
  * The core Dispatch class that instantiates and manages everything for Nuber
- * 
+ * 	
  * @author james
  *
  */
@@ -24,7 +24,8 @@ public class NuberDispatch {
 	private final  HashMap<String, NuberRegion> regions;
 	
 	//BlockingQueue is thread safe, it handles thread synchronization by itself 
-	private BlockingQueue<Driver> driverQueue = new ArrayBlockingQueue(MAX_DRIVERS);
+	private BlockingQueue<Driver> driverQueue = new LinkedBlockingQueue(MAX_DRIVERS);
+	private static int pending =0;
 	
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
@@ -37,6 +38,9 @@ public class NuberDispatch {
 	{
 		this.logEvents =logEvents;
 		this.regions= new HashMap<>();	
+		for(String regionName: regionInfo.keySet()) {
+			regions.put(regionName, new NuberRegion(this, regionName, regionInfo.get(regionName)));
+		}
 		
 	}
 	
@@ -62,9 +66,16 @@ public class NuberDispatch {
 	 * @return A driver that has been removed from the queue
 	 * @throws InterruptedException 
 	 */
-	public Driver getDriver() throws InterruptedException
+	public synchronized Driver getDriver() throws InterruptedException
 	{
-		return driverQueue.take();
+		Driver driver =  driverQueue.take();
+		
+			if(pending>0) {
+				
+				pending--;
+			}
+			return driver;
+		
 	}
 
 	/**
@@ -95,7 +106,15 @@ public class NuberDispatch {
 	 * @return returns a Future<BookingResult> object
 	 */
 	public Future<BookingResult> bookPassenger(Passenger passenger, String region) {
+		NuberRegion nuberRegion = regions.get(region);
+		if(region !=null) {
+			return nuberRegion.bookPassenger(passenger);
+		}
+		return null;		
 	}
+			
+		
+		
 
 	/**
 	 * Gets the number of non-completed bookings that are awaiting a driver from dispatch
@@ -106,12 +125,16 @@ public class NuberDispatch {
 	 */
 	public int getBookingsAwaitingDriver()
 	{
+		return pending;
 	}
 	
 	/**
 	 * Tells all regions to finish existing bookings already allocated, and stop accepting new bookings
 	 */
 	public void shutdown() {
+		for(NuberRegion region : regions.values()) {
+			region.shutdown();
+		}
 	}
 
 }
