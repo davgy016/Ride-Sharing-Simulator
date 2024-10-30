@@ -47,6 +47,7 @@ public class Booking implements Callable<BookingResult>{
 		this.dispatch = dispatch;
 		this.passenger=passenger;
 		this.startTime = new Date().getTime();
+		dispatch.logEvent(this, "Creating booking");
 	}
 	
 	private static synchronized int generateBookingID() {
@@ -74,16 +75,22 @@ public class Booking implements Callable<BookingResult>{
 	public BookingResult call() throws InterruptedException {
 		
 			driver = dispatch.getDriver();
-			while(driver==null) {
-				Thread.sleep(100);
-				driver = dispatch.getDriver();
+			if(driver!=null) {
+				dispatch.logEvent(this, driver.name + ": Starting, on way to passenger");
+//				Thread.sleep(100);
+				driver.pickUpPassenger(passenger);
+				dispatch.logEvent(this, driver.name + ": Collected passenger, on way to destination");
+				driver.driveToDestination();
+				long endTime =new Date().getTime();
+				long travelTime = endTime - startTime;
+				dispatch.addDriver(driver);			
+				dispatch.logEvent(this, driver.name + ": Driver is free now ");
+				return  new BookingResult(bookingID, passenger, driver, travelTime);		
+				
+			}else {
+				dispatch.logEvent(this, passenger.name + ": Booking could not start, no available driver" );
+			return null;
 			}
-			driver.pickUpPassenger(passenger);
-			driver.driveToDestination();
-			long endTime =new Date().getTime();
-			long travelTime = endTime - startTime;
-			dispatch.addDriver(driver);			
-			return  new BookingResult(bookingID, passenger, driver, travelTime);		
 	}
 	
 	/***
