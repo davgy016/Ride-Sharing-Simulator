@@ -21,7 +21,7 @@ public class Driver extends Person {
 	public void pickUpPassenger(Passenger newPassenger) throws InterruptedException {
 	
 		currentPassenger = newPassenger;
-		delay(maxSleep);
+		delay();
 	}
 
 	/**
@@ -33,16 +33,17 @@ public class Driver extends Person {
 	public void driveToDestination() throws InterruptedException{
 		if(currentPassenger!= null) {
 			int travelTime = currentPassenger.getTravelTime();
-			delay(travelTime);
+			Thread.sleep(travelTime);
+			currentPassenger=null;
 		}
 		
 	}
 	
 	// get random sleep time 	
-	private void delay(int maxTime) {
+	private void delay() {
         int actualDelay;
         try {
-            actualDelay = randomWithRange(0, maxTime);
+            actualDelay = randomWithRange(0, maxSleep);
             Thread.sleep(actualDelay);
         } catch (Exception e) {
             System.out.println(e);
