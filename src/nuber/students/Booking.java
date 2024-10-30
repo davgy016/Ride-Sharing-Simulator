@@ -1,8 +1,9 @@
 package nuber.students;
 
-import java.math.BigInteger;
+
 import java.util.Date;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * 
@@ -23,14 +24,19 @@ import java.util.concurrent.Callable;
  *
  */
 public class Booking implements Callable<BookingResult>{
-	
-	private final int bookingID;
+	//AtomicInteger is that the thread-safety is built into the actual object itself,
+	//rather than you needing to worry about the possible interleavings, and monitors held.
+	//As an atomic counter (incrementAndGet(), etc) that can be used by many threads concurrently
+	private static final AtomicInteger bookingIDCounter = new AtomicInteger(0);
+	private int bookingID;
 	private final NuberDispatch dispatch;
 	private final Passenger passenger;
 	private Driver driver;
 	private long startTime;
 	
-	private static int counterID=0;
+	public int getJobID() {
+		return bookingID;
+	}
 
 		
 	/**
@@ -43,18 +49,13 @@ public class Booking implements Callable<BookingResult>{
 	 */
 	public Booking (NuberDispatch dispatch, Passenger passenger)
 	{
-		this.bookingID = generateBookingID();
+		this.bookingID = bookingIDCounter.incrementAndGet();
 		this.dispatch = dispatch;
 		this.passenger=passenger;
 		this.startTime = new Date().getTime();
 		dispatch.logEvent(this, "Creating booking");
 	}
 	
-	private static synchronized int generateBookingID() {
-		// TODO Auto-generated method stub
-		return ++counterID;
-	}
-
 	/**
 	 * At some point, the Nuber Region responsible for the booking can start it (has free spot),
 	 * and calls the Booking.call() function, which:
