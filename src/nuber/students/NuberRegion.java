@@ -23,7 +23,7 @@ public class NuberRegion {
 	private NuberDispatch dispatch;
 	private String regionName;
 	private final int maxSimultaneousJobs;
-	private ExecutorService executer;
+	private ExecutorService bookingExecuter;
 
 	
 	/**
@@ -38,7 +38,7 @@ public class NuberRegion {
 		this.dispatch = dispatch;
 		this.regionName=regionName;
 		this.maxSimultaneousJobs=maxSimultaneousJobs;
-		this.executer = Executors.newFixedThreadPool(maxSimultaneousJobs);
+		this.bookingExecuter = Executors.newFixedThreadPool(maxSimultaneousJobs);
 	}
 	
 	/**
@@ -51,23 +51,29 @@ public class NuberRegion {
 	 * 
 	 * @param waitingPassenger
 	 * @return a Future that will provide the final BookingResult object from the completed booking
+	 * @throws InterruptedException 
 	 */
-	public Future<BookingResult> bookPassenger(Passenger waitingPassenger)
+	public Future<BookingResult> bookPassenger(Passenger waitingPassenger) throws InterruptedException
 	{		
-		if(executer.isShutdown()) {
+		if(bookingExecuter.isShutdown()) {
 			System.out.println("Booking was rejected!");
 			return null;
 		}
 		Booking booking= new Booking(dispatch, waitingPassenger);
-		return executer.submit(booking);
-	}
+		return bookingExecuter.submit(booking);
+		
+	}	
 	
+	public String getRegionName() {
+		return regionName;
+	}
+
 	/**
 	 * Called by dispatch to tell the region to complete its existing bookings and stop accepting any new bookings
 	 */
 	public void shutdown()
 	{
-		executer.shutdown();
+		bookingExecuter.shutdown();
 	}
 		
 }
