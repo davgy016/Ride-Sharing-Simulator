@@ -1,8 +1,10 @@
 package nuber.students;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A single Nuber region that operates independently of other regions, other than getting 
@@ -24,6 +26,8 @@ public class NuberRegion {
 	private String regionName;
 	private final int maxSimultaneousJobs;
 	private ExecutorService bookingExecuter;
+	private final AtomicInteger activeBookings = new AtomicInteger(0);
+	
 
 	
 	/**
@@ -59,12 +63,29 @@ public class NuberRegion {
 			System.out.println("Booking was rejected!");
 			return null;
 		}
+		if(activeBookings.get()< maxSimultaneousJobs) {
+			
 		Booking booking= new Booking(dispatch, waitingPassenger);
-		return bookingExecuter.submit(booking);
+			activeBookings.incrementAndGet();
+			
+			
+			return bookingExecuter.submit(new Callable<BookingResult>() {
+				@Override
+				public BookingResult call() throws Exception{
+					try {
+						return booking.call();
+					}finally{
+						activeBookings.decrementAndGet();
+					}
+				}					
+				
+			});
+		}
+		return null;
 		
 	}	
 	
-	public String getRegionName() {
+	public String getRegionName() {	
 		return regionName;
 	}
 
@@ -73,7 +94,7 @@ public class NuberRegion {
 	 */
 	public void shutdown()
 	{
-		bookingExecuter.shutdown();
+		bookingExecuter.shutdown();		 
 	}
 		
 }
