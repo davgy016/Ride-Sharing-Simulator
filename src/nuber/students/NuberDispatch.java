@@ -77,16 +77,17 @@ public class NuberDispatch {
 	 */
 	public  Driver getDriver() throws InterruptedException
 	{
-		Driver driver =  driverQueue.take();
-		
-			if(pendingBooking.get()>0 && driver!=null) {
-				
+		if(pendingBooking.get()>0) {
+			//'take() ' retrieves and removes the head of the queue, waiting if necessary until an element becomes available.
+			Driver driver =  driverQueue.take();			
+			if(driver!=null) {
 				pendingBooking.decrementAndGet();
+				return driver;
 			}
-			return driver;
-		
+		}
+		return null;
 	}
-
+	
 	/**
 	 * Prints out the string
 	 * 	    booking + ": " + message
