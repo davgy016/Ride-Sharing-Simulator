@@ -28,7 +28,7 @@ public class NuberDispatch {
 	//BlockingQueue is thread safe, it handles thread synchronization by itself 
 	private BlockingQueue<Driver> driverQueue;
 //	private BlockingQueue<Booking> pendingBookingQueue;
-	private final AtomicInteger pendingBooking = new AtomicInteger(0);
+	private AtomicInteger pendingBooking = new AtomicInteger(0);
 	private final ExecutorService bookingExecutor;
 	private boolean isShutdown=false;
 	

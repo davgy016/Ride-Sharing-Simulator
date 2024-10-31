@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Booking implements Callable<BookingResult>{
 	//AtomicInteger is that the thread-safety is built into the actual object itself,
 	//rather than you needing to worry about the possible interleavings, and monitors held.
+	//Ref: https://stackoverflow.com/questions/4818699/practical-uses-for-atomicinteger#:~:text=The%20primary%20use%20of%20AtomicInteger,an%20integer%20without%20using%20synchronized%20.
 	//As an atomic counter (incrementAndGet(), etc) that can be used by many threads concurrently
 	private static final AtomicInteger bookingIDCounter = new AtomicInteger(0);
 	private int bookingID;
@@ -34,9 +35,6 @@ public class Booking implements Callable<BookingResult>{
 	private Driver driver;
 	private long startTime;
 	
-	public int getJobID() {
-		return bookingID;
-	}
 
 		
 	/**
@@ -56,6 +54,9 @@ public class Booking implements Callable<BookingResult>{
 		dispatch.logEvent(this, "Creating booking");
 	}
 	
+	public int getJobID() {
+		return bookingID;
+	}
 	/**
 	 * At some point, the Nuber Region responsible for the booking can start it (has free spot),
 	 * and calls the Booking.call() function, which:
@@ -77,18 +78,19 @@ public class Booking implements Callable<BookingResult>{
 		
 			driver = dispatch.getDriver();
 			if(driver!=null) {
-				dispatch.logEvent(this, driver.name + ": Starting, on way to passenger");
+				dispatch.logEvent(this,  ": Starting, on way to passenger");
 //				Thread.sleep(100);
 				driver.pickUpPassenger(passenger);
-				dispatch.logEvent(this, driver.name + ": Collected passenger, on way to destination");
+				dispatch.logEvent(this,  ": Collected passenger, on way to destination");
 				driver.driveToDestination();
 				long endTime =new Date().getTime();
 				long travelTime = endTime - startTime;
 				dispatch.addDriver(driver);			
-				dispatch.logEvent(this, driver.name + ": Driver is free now ");
+				dispatch.logEvent(this,  ":Drop off, driver is free now ");
 				return  new BookingResult(bookingID, passenger, driver, travelTime);		
 				
 			}else {
+				wait();
 				dispatch.logEvent(this, passenger.name + ": Booking could not start, no available driver" );
 			return null;
 			}
