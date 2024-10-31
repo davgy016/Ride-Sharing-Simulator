@@ -77,16 +77,16 @@ public class NuberDispatch {
 	 */
 	public  Driver getDriver() throws InterruptedException
 	{
-		if(pendingBooking.get()>0) {			
+		if(pendingBooking.get()<=0 || isShutdown) {	
+			return null;
+		}		
 			//'take() ' retrieves and removes the head of the queue, waiting if necessary until an element becomes available.
 			Driver driver =  driverQueue.take();			
 			if(driver!=null) {
 				pendingBooking.decrementAndGet();
-				return driver;
-			}
-		}		
-		return null;
-	}
+			} 
+			return driver;
+	}		
 	
 	/**
 	 * Prints out the string
@@ -117,8 +117,13 @@ public class NuberDispatch {
 	 * @throws InterruptedException 
 	 */
 	public Future<BookingResult> bookPassenger(Passenger passenger, String region) throws InterruptedException {
+		if(isShutdown) {
+			logEvent(null, "Dispatch shutdown");
+			return null;
+		}
+		
 		NuberRegion nuberRegion = regions.get(region);
-		if(region !=null && isShutdown==false) {
+		if(region !=null) {
 			pendingBooking.incrementAndGet();
 			return nuberRegion.bookPassenger(passenger);
 		}
