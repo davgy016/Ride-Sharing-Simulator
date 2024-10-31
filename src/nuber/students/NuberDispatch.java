@@ -2,9 +2,11 @@ package nuber.students;
 
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * The core Dispatch class that instantiates and manages everything for Nuber
@@ -24,8 +26,11 @@ public class NuberDispatch {
 	private final  HashMap<String, NuberRegion> regions;
 	
 	//BlockingQueue is thread safe, it handles thread synchronization by itself 
-	private BlockingQueue<Driver> driverQueue = new LinkedBlockingQueue(MAX_DRIVERS);
-	private static int pending =0;
+	private BlockingQueue<Driver> driverQueue;
+//	private BlockingQueue<Booking> pendingBookingQueue;
+	private final AtomicInteger pendingBooking = new AtomicInteger(0);
+	private final ExecutorService bookingExecutor;
+	private boolean isShutdown=false;
 	
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
@@ -37,7 +42,10 @@ public class NuberDispatch {
 	public NuberDispatch(HashMap<String, Integer> regionInfo, boolean logEvents)
 	{
 		this.logEvents =logEvents;
-		this.regions= new HashMap<>();	
+		this.regions= new HashMap<>();
+		this.driverQueue = new LinkedBlockingQueue<Driver>(MAX_DRIVERS);
+//		this.pendingBookingQueue = new LinkedBlockingQueue<Booking>();
+		this.bookingExecutor = Executors.newFixedThreadPool(5);	
 		for(String regionName: regionInfo.keySet()) {
 			regions.put(regionName, new NuberRegion(this, regionName, regionInfo.get(regionName)));
 		}
@@ -56,8 +64,9 @@ public class NuberDispatch {
 	public boolean addDriver(Driver newDriver) throws InterruptedException
 	{
 		return driverQueue.offer(newDriver);
+		
 	}
-	
+		
 	/**
 	 * Gets a driver from the front of the queue
 	 *  
@@ -66,13 +75,13 @@ public class NuberDispatch {
 	 * @return A driver that has been removed from the queue
 	 * @throws InterruptedException 
 	 */
-	public synchronized Driver getDriver() throws InterruptedException
+	public  Driver getDriver() throws InterruptedException
 	{
 		Driver driver =  driverQueue.take();
 		
-			if(pending>0) {
+			if(pendingBooking.get()>0 && driver!=null) {
 				
-				pending--;
+				pendingBooking.decrementAndGet();
 			}
 			return driver;
 		
@@ -104,10 +113,12 @@ public class NuberDispatch {
 	 * @param passenger The passenger to book
 	 * @param region The region to book them into
 	 * @return returns a Future<BookingResult> object
+	 * @throws InterruptedException 
 	 */
-	public Future<BookingResult> bookPassenger(Passenger passenger, String region) {
+	public Future<BookingResult> bookPassenger(Passenger passenger, String region) throws InterruptedException {
 		NuberRegion nuberRegion = regions.get(region);
-		if(region !=null) {
+		if(region !=null && isShutdown==false) {
+			pendingBooking.incrementAndGet();
 			return nuberRegion.bookPassenger(passenger);
 		}
 		return null;		
@@ -125,16 +136,19 @@ public class NuberDispatch {
 	 */
 	public int getBookingsAwaitingDriver()
 	{
-		return pending;
+		return pendingBooking.get();
 	}
 	
 	/**
 	 * Tells all regions to finish existing bookings already allocated, and stop accepting new bookings
 	 */
 	public void shutdown() {
+		isShutdown = true;
 		for(NuberRegion region : regions.values()) {
 			region.shutdown();
+			logEvent(null,"Region Shutdown: " + region.getRegionName());
 		}
+		
 	}
 
 }
