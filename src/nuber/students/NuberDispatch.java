@@ -29,9 +29,8 @@ public class NuberDispatch {
 	private BlockingQueue<Driver> driverQueue;
 //	private BlockingQueue<Booking> pendingBookingQueue;
 	private AtomicInteger pendingBooking = new AtomicInteger(0);
-	private final ExecutorService bookingExecutor;
-	private boolean isShutdown=false;
-	
+//	private final ExecutorService bookingExecutor;
+	private boolean isShutdown=false;	
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
 	 * It should be able to handle a variable number of regions based on the HashMap provided.
@@ -45,9 +44,10 @@ public class NuberDispatch {
 		this.regions= new HashMap<>();
 		this.driverQueue = new LinkedBlockingQueue<Driver>(MAX_DRIVERS);
 //		this.pendingBookingQueue = new LinkedBlockingQueue<Booking>();
-		this.bookingExecutor = Executors.newFixedThreadPool(5);	
+//		this.bookingExecutor = Executors.newFixedThreadPool(5);	
 		for(String regionName: regionInfo.keySet()) {
 			regions.put(regionName, new NuberRegion(this, regionName, regionInfo.get(regionName)));
+			new Thread(regionName).start();
 		}
 		
 	}
@@ -77,14 +77,14 @@ public class NuberDispatch {
 	 */
 	public  Driver getDriver() throws InterruptedException
 	{
-		if(pendingBooking.get()>0) {
+		if(pendingBooking.get()>0) {			
 			//'take() ' retrieves and removes the head of the queue, waiting if necessary until an element becomes available.
 			Driver driver =  driverQueue.take();			
 			if(driver!=null) {
 				pendingBooking.decrementAndGet();
 				return driver;
 			}
-		}
+		}		
 		return null;
 	}
 	
