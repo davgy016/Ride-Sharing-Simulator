@@ -76,10 +76,12 @@ public class Booking implements Callable<BookingResult>{
 	 */
 	public BookingResult call() throws InterruptedException {
 		
-			driver = dispatch.getDriver();
-			if(driver!=null) {
+			
+			while((driver = dispatch.getDriver()) ==null) {
+				dispatch.logEvent(this, "Waitng for available driver");
+				Thread.sleep(100);
+			}
 				dispatch.logEvent(this,  ": Starting, on way to passenger");
-//				Thread.sleep(100);
 				driver.pickUpPassenger(passenger);
 				dispatch.logEvent(this,  ": Collected passenger, on way to destination");
 				driver.driveToDestination();
@@ -87,13 +89,8 @@ public class Booking implements Callable<BookingResult>{
 				long travelTime = endTime - startTime;
 				dispatch.addDriver(driver);			
 				dispatch.logEvent(this,  ":Drop off, driver is free now ");
-				return  new BookingResult(bookingID, passenger, driver, travelTime);		
-				
-			}else {
-				wait();
-				dispatch.logEvent(this, passenger.name + ": Booking could not start, no available driver" );
-			return null;
-			}
+				return  new BookingResult(bookingID, passenger, driver, travelTime);				
+			
 	}
 	
 	/***
