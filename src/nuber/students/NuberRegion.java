@@ -28,7 +28,7 @@ public class NuberRegion implements Runnable{
 	private String regionName;
 	private final int maxSimultaneousJobs;
 	private ExecutorService bookingExecuter;
-	private final AtomicInteger activeBookings = new AtomicInteger(0);
+	private final AtomicInteger activeBookings = new AtomicInteger();
 	private final BlockingQueue<Passenger> pendingQueue = new LinkedBlockingDeque<Passenger>();
 	
 	
@@ -66,7 +66,7 @@ public class NuberRegion implements Runnable{
 		if(bookingExecuter.isShutdown()) {
 			dispatch.logEvent(null, "Booking was rejected!");
 			return null;
-		}else {
+		}
 			
 		if(activeBookings.get()< maxSimultaneousJobs) {
 			
@@ -78,18 +78,15 @@ public class NuberRegion implements Runnable{
 				public BookingResult call() throws Exception{
 					
 					activeBookings.decrementAndGet();
-						return booking.call();
-					
-					
+						return booking.call();					
 				}					
-				
 			});
 		}
 		pendingQueue.put(waitingPassenger);
 		return null;
-		
-		}
 	}	
+		
+		
 	
 	public String getRegionName() {	
 		return regionName;
@@ -108,21 +105,21 @@ public class NuberRegion implements Runnable{
 		// TODO Auto-generated method stub
 		while(!bookingExecuter.isShutdown()) {
 			try {
-				if(!pendingQueue.isEmpty()) {			
-					bookPassenger(pendingQueue.take());
+				if(!pendingQueue.isEmpty()) {	
+					Passenger nextPassenger = pendingQueue.take();
+					bookPassenger(nextPassenger);
 				}  
-				Thread.sleep(50);
-					
+				Thread.sleep(50);					
 					
 			}catch(InterruptedException e){
 				Thread.currentThread().interrupt();
 				dispatch.logEvent(null, "interrupted "+ regionName);
 			}
 		}
-		System.out.println("Shutdown compl: "+regionName);
+		
 	}
 
+}
 		
 	
 		
-}

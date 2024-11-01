@@ -26,8 +26,11 @@ public class NuberDispatch {
 	private final  HashMap<String, NuberRegion> regions;
 	
 	//BlockingQueue is thread safe, it handles thread synchronization by itself 
+	//https://docs.oracle.com/javase/8/docs/api/?java/util/concurrent/BlockingQueue.html
 	private BlockingQueue<Driver> driverQueue;
-	private AtomicInteger pendingBooking = new AtomicInteger(0);
+	//Automatically incremented counter, thread safe, initial value 0
+	//https://docs.oracle.com/javase/8/docs/api/index.html?java/util/concurrent/atomic/package-summary.html
+	private AtomicInteger pendingBooking = new AtomicInteger();
 	private final ExecutorService regionExecutor;
 	private boolean isShutdown=false;	
 	/**

@@ -79,16 +79,16 @@ public class Booking implements Callable<BookingResult>{
 			
 			while((driver = dispatch.getDriver()) ==null) {
 				dispatch.logEvent(this, "Waitng for available driver");
-				Thread.sleep(100);
+				Thread.sleep(1000);
 			}
-				dispatch.logEvent(this,  ": Starting, on way to passenger");
+				dispatch.logEvent(this,  "Starting, on way to passenger");
 				driver.pickUpPassenger(passenger);
-				dispatch.logEvent(this,  ": Collected passenger, on way to destination");
+				dispatch.logEvent(this,  "Collected passenger, on way to destination");
 				driver.driveToDestination();
 				long endTime =new Date().getTime();
 				long travelTime = endTime - startTime;
 				dispatch.addDriver(driver);			
-				dispatch.logEvent(this,  ":Drop off, driver is free now ");
+				dispatch.logEvent(this,  "Drop off, driver is free now ");
 				return  new BookingResult(bookingID, passenger, driver, travelTime);				
 			
 	}
