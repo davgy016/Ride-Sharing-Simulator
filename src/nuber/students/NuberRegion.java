@@ -1,9 +1,11 @@
 package nuber.students;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -20,13 +22,15 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author james
  *
  */
-public class NuberRegion {
+public class NuberRegion implements Runnable{
 	
 	private NuberDispatch dispatch;
 	private String regionName;
 	private final int maxSimultaneousJobs;
 	private ExecutorService bookingExecuter;
 	private final AtomicInteger activeBookings = new AtomicInteger(0);
+	private final BlockingQueue<Passenger> pendingQueue = new LinkedBlockingDeque<Passenger>();
+	
 	
 
 	
@@ -60,29 +64,31 @@ public class NuberRegion {
 	public Future<BookingResult> bookPassenger(Passenger waitingPassenger) throws InterruptedException
 	{		
 		if(bookingExecuter.isShutdown()) {
-			System.out.println("Booking was rejected!");
+			dispatch.logEvent(null, "Booking was rejected!");
 			return null;
-		}
+		}else {
+			
 		if(activeBookings.get()< maxSimultaneousJobs) {
 			
 		Booking booking= new Booking(dispatch, waitingPassenger);
-			activeBookings.incrementAndGet();
-			
+			activeBookings.incrementAndGet();	
 			
 			return bookingExecuter.submit(new Callable<BookingResult>() {
 				@Override
 				public BookingResult call() throws Exception{
-					try {
+					
+					activeBookings.decrementAndGet();
 						return booking.call();
-					}finally{
-						activeBookings.decrementAndGet();
-					}
+					
+					
 				}					
 				
 			});
 		}
+		pendingQueue.put(waitingPassenger);
 		return null;
 		
+		}
 	}	
 	
 	public String getRegionName() {	
@@ -94,7 +100,29 @@ public class NuberRegion {
 	 */
 	public void shutdown()
 	{
-		bookingExecuter.shutdown();		 
+		bookingExecuter.shutdown();		 		
 	}
+
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		while(!bookingExecuter.isShutdown()) {
+			try {
+				if(!pendingQueue.isEmpty()) {			
+					bookPassenger(pendingQueue.take());
+				}  
+				Thread.sleep(50);
+					
+					
+			}catch(InterruptedException e){
+				Thread.currentThread().interrupt();
+				dispatch.logEvent(null, "interrupted "+ regionName);
+			}
+		}
+		System.out.println("Shutdown compl: "+regionName);
+	}
+
+		
+	
 		
 }
