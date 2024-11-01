@@ -27,9 +27,8 @@ public class NuberDispatch {
 	
 	//BlockingQueue is thread safe, it handles thread synchronization by itself 
 	private BlockingQueue<Driver> driverQueue;
-//	private BlockingQueue<Booking> pendingBookingQueue;
 	private AtomicInteger pendingBooking = new AtomicInteger(0);
-//	private final ExecutorService bookingExecutor;
+	private final ExecutorService regionExecutor;
 	private boolean isShutdown=false;	
 	/**
 	 * Creates a new dispatch objects and instantiates the required regions and any other objects required.
@@ -38,18 +37,17 @@ public class NuberDispatch {
 	 * @param regionInfo Map of region names and the max simultaneous bookings they can handle
 	 * @param logEvents Whether logEvent should print out events passed to it
 	 */
-	public NuberDispatch(HashMap<String, Integer> regionInfo, boolean logEvents)
-	{
+	public NuberDispatch(HashMap<String, Integer> regionInfo, boolean logEvents)	{
 		this.logEvents =logEvents;
 		this.regions= new HashMap<>();
 		this.driverQueue = new LinkedBlockingQueue<Driver>(MAX_DRIVERS);
-//		this.pendingBookingQueue = new LinkedBlockingQueue<Booking>();
-//		this.bookingExecutor = Executors.newFixedThreadPool(5);	
+		this.regionExecutor = Executors.newFixedThreadPool(regionInfo.size());	
 		for(String regionName: regionInfo.keySet()) {
-			regions.put(regionName, new NuberRegion(this, regionName, regionInfo.get(regionName)));
-			new Thread(regionName).start();
-		}
-		
+			NuberRegion region = new NuberRegion(this, regionName, regionInfo.get(regionName));
+			regions.put(regionName, region);
+//			new Thread(region).start();
+			regionExecutor.submit(region);
+		}		
 	}
 	
 	/**
@@ -63,8 +61,7 @@ public class NuberDispatch {
 	 */
 	public boolean addDriver(Driver newDriver) throws InterruptedException
 	{
-		return driverQueue.offer(newDriver);
-		
+		return driverQueue.offer(newDriver);		
 	}
 		
 	/**
@@ -76,16 +73,17 @@ public class NuberDispatch {
 	 * @throws InterruptedException 
 	 */
 	public  Driver getDriver() throws InterruptedException
-	{
-		if(pendingBooking.get()<=0 || isShutdown) {	
-			return null;
-		}		
-			//'take() ' retrieves and removes the head of the queue, waiting if necessary until an element becomes available.
-			Driver driver =  driverQueue.take();			
-			if(driver!=null) {
-				pendingBooking.decrementAndGet();
-			} 
-			return driver;
+	{	
+		//'take() ' retrieves and removes the head of the queue, waiting if necessary until an element becomes available.
+		Driver driver =  driverQueue.take();			
+		if(driver!=null) {
+			pendingBooking.decrementAndGet();
+		} 
+		else {
+			logEvent(null, "No available driver");
+			return null;		
+		}			
+		return driver;		
 	}		
 	
 	/**
@@ -123,7 +121,7 @@ public class NuberDispatch {
 		}
 		
 		NuberRegion nuberRegion = regions.get(region);
-		if(region !=null) {
+		if(nuberRegion !=null) {
 			pendingBooking.incrementAndGet();
 			return nuberRegion.bookPassenger(passenger);
 		}
@@ -131,8 +129,6 @@ public class NuberDispatch {
 	}
 			
 		
-		
-
 	/**
 	 * Gets the number of non-completed bookings that are awaiting a driver from dispatch
 	 * 
@@ -152,9 +148,9 @@ public class NuberDispatch {
 		isShutdown = true;
 		for(NuberRegion region : regions.values()) {
 			region.shutdown();
-			logEvent(null,"Region Shutdown: " + region.getRegionName());
+//			logEvent(null,"Region Shutdown: " + region.getRegionName());
 		}
-		
+		regionExecutor.shutdown();
 	}
 
 }
