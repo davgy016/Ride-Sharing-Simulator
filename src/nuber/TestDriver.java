@@ -1,8 +1,8 @@
-package nuber.students;
+package nuber;
 
 import java.util.HashMap;
 
-public class AssignmentDriver {
+public class TestDriver {
 
 	
 	public static void main(String[] args) throws Exception {

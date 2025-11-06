@@ -1,4 +1,4 @@
-package nuber.students;
+package nuber;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;

@@ -1,4 +1,4 @@
-package nuber.students;
+package nuber;
 
 public abstract class Person
 {

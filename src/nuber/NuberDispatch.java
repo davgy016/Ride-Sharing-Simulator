@@ -1,4 +1,4 @@
-package nuber.students;
+package nuber;
 
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;

@@ -1,4 +1,4 @@
-package nuber.students;
+package nuber;
 
 import java.util.Date;
 import java.util.HashMap;

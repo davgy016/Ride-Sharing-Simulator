@@ -1,4 +1,4 @@
-package nuber.students;
+package nuber;
 
 public class Driver extends Person {
 
